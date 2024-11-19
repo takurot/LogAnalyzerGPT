@@ -129,6 +129,9 @@ sudo python3 log_analyzer_gpt.py
    - `/var/log/messages`
    - `/var/log/dmesg`
    - `/var/log/auth.log`
+   - `/var/log/kern.log`
+   - `/var/log/cron`
+   - `/var/log/secure`
 
 2. **エラーフィルタリング**:
    キーワード（例: `error`, `failed`, `critical`など）を基に、重要なログ行のみを抽出します。
