@@ -1,0 +1,2 @@
+# LogAnalyzerGPT
+Linuxログファイルを収集してChatGPTで状態を考察するスクリプト
