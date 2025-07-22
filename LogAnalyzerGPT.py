@@ -51,19 +51,45 @@ def collect_boot_logs():
         return ""
 
 # Function to filter for errors and warnings
-def filter_logs(log_data):
-    filtered_logs = []
+def filter_logs(log_data, context=2):
+    """Filter logs containing error keywords and include surrounding context."""
+
+    filtered_blocks = []
     error_keywords = [
-        "error", "failed", "critical", "panic", "warn", "denied", "unauthorized",
-        "ERROR", "Error", "CRITICAL", "PANIC", "WARN", "エラー"
+        "error",
+        "failed",
+        "critical",
+        "panic",
+        "warn",
+        "denied",
+        "unauthorized",
+        "ERROR",
+        "Error",
+        "CRITICAL",
+        "PANIC",
+        "WARN",
+        "エラー",
     ]
+
     log_lines = log_data.split("\n")
-    
-    for line in log_lines:
-        if any(keyword in line.lower() for keyword in error_keywords):
-            filtered_logs.append(line)
-    
-    return "\n".join(filtered_logs)
+    total_lines = len(log_lines)
+
+    for idx, line in enumerate(log_lines):
+        lowered = line.lower()
+        if any(keyword in lowered for keyword in error_keywords):
+            start = max(0, idx - context)
+            end = min(total_lines, idx + context + 1)
+            block = "\n".join(log_lines[start:end])
+            filtered_blocks.append(block)
+
+    unique_blocks = []
+    seen = set()
+    for block in filtered_blocks:
+        if block not in seen:
+            seen.add(block)
+            unique_blocks.append(block)
+
+    return "\n\n".join(unique_blocks)
 
 # Function to send logs to OpenAI for summarization
 def summarize_logs(log_summary):
