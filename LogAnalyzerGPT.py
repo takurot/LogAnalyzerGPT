@@ -1,12 +1,14 @@
+import argparse
 import os
-import re
 import subprocess
 from openai import OpenAI
 
 client = OpenAI()
 
 # Function to gather logs from specified files
-def gather_logs():
+def gather_logs(extra_log_files=None):
+    """Collect logs from predefined and optionally user-specified files."""
+
     logs = []
     # Target log files
     log_files = [
@@ -16,9 +18,12 @@ def gather_logs():
         "/var/log/auth.log",
         "/var/log/kern.log",
         "/var/log/cron",
-        "/var/log/secure"
+        "/var/log/secure",
     ]
-    
+
+    if extra_log_files:
+        log_files.extend(extra_log_files)
+
     for log_file in log_files:
         if os.path.exists(log_file):
             try:
@@ -27,7 +32,7 @@ def gather_logs():
                     logs.append(f"=== {log_file} ===\n" + "".join(file.readlines()[-500:]))
             except PermissionError:
                 print(f"Permission denied: {log_file}")
-    
+
     return "\n".join(logs)
 
 # Function to collect dmesg logs
@@ -91,19 +96,31 @@ def filter_logs(log_data, context=2):
 
     return "\n\n".join(unique_blocks)
 
-# Function to send logs to OpenAI for summarization
-def summarize_logs(log_summary):
+# Function to send logs to OpenAI for analysis and improvement suggestions
+def analyze_logs(log_summary):
+    """Send filtered logs to OpenAI and request problem analysis and improvements."""
+
+    prompt = (
+        "以下は複数のログファイルから抽出したエラーや警告の抜粋です。\n"
+        "各問題について、以下の情報を日本語で簡潔に示してください:\n"
+        "- 発生箇所（ログファイル名と概要）\n"
+        "- 問題点の指摘と原因・影響の推定\n"
+        "- 具体的な改善案や次のアクション\n"
+        "最後に注意が必要なログファイルを列挙してください。\n\n"
+        f"{log_summary}"
+    )
+
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
             {"role": "system", "content": "You are a system analyst specializing in Linux system logs."},
-            {"role": "user", "content": f"Summarize the following system logs for errors, suspicious activities, and potential future issues, and answer in Japanese, and mention the log file name to pay attention:\n\n{log_summary}"}
+            {"role": "user", "content": prompt},
         ],
     )
     return response.choices[0].message.content.strip()
 
 # Function to save summary to a file
-def save_summary_to_file(summary, file_path="log_summary.txt"):
+def save_report_to_file(summary, file_path="log_summary.txt"):
     try:
         with open(file_path, "w") as file:
             file.write(summary)
@@ -113,8 +130,12 @@ def save_summary_to_file(summary, file_path="log_summary.txt"):
 
 # Main function
 def main():
+    parser = argparse.ArgumentParser(description="Analyze system logs and suggest improvements.")
+    parser.add_argument("--extra-logs", nargs="*", default=[], help="Additional log files to analyze")
+    args = parser.parse_args()
+
     print("Gathering logs...")
-    log_data = gather_logs()
+    log_data = gather_logs(args.extra_logs)
     
     print("Collecting dmesg logs...")
     dmesg_logs = collect_dmesg_logs()
@@ -127,11 +148,11 @@ def main():
     filtered_log_data = filter_logs(combined_logs)
     
     if filtered_log_data.strip():
-        print("Sending logs to OpenAI for summarization...")
-        summary = summarize_logs(filtered_log_data[:3000])  # Limit to 3000 characters for API
+        print("Sending logs to OpenAI for analysis...")
+        summary = analyze_logs(filtered_log_data[:3000])  # Limit to 3000 characters for API
         print("\nSummary from OpenAI:\n")
         print(summary)
-        save_summary_to_file(summary)
+        save_report_to_file(summary)
     else:
         print("No significant errors or warnings found in logs.")
 
