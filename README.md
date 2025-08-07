@@ -1,12 +1,12 @@
 # LogAnalyzerGPT
 
-LogAnalyzerGPTは、Linuxシステムのログを収集・解析し、エラーや不審な活動を特定して要約します。OpenAIのGPT-4モデルを利用して、システム状態の概要を生成します。要約結果はテキストファイルとして保存されます。
+LogAnalyzerGPTは、Linuxシステムのログを収集・解析し、エラーや不審な活動を特定して要約します。さらに、検出された問題点の指摘や改善案も提示します。OpenAIのGPT-4モデルを利用して、システム状態の概要を生成し、結果はテキストファイルとして保存されます。
 
 ## 特徴
 - **ログ収集**: `/var/log`ディレクトリ内の主要なログファイルを収集。
 - **エラー抽出**: `error`, `failed`, `critical`などのキーワードを使用してエラーや警告を抽出し、関連する前後のログも含めて取得。
-- **要約生成**: OpenAIのAPIを利用してログの要約を生成。
-- **ファイル保存**: 生成した要約を`log_summary.txt`として保存。
+- **問題分析と改善提案**: OpenAIのAPIを利用し、検出された問題点とその改善案を提示。
+- **ファイル保存**: 生成したレポートを`log_summary.txt`として保存。
 
 ---
 
@@ -38,8 +38,10 @@ cd LogAnalyzerGPT
 
 ### 3. スクリプトの実行
 ```bash
-python3 log_analyzer_gpt.py
+python3 LogAnalyzerGPT.py [--extra-logs /path/to/other.log]
 ```
+
+`--extra-logs`オプションを使用すると、追加で解析したいログファイルを指定できます。
 
 #### **ログファイルへのアクセス権の変更**
 
@@ -49,7 +51,7 @@ python3 log_analyzer_gpt.py
 最も簡単な方法は、スクリプトを `sudo` 権限で実行することです。
 
 ```bash
-sudo python3 log_analyzer_gpt.py
+sudo python3 LogAnalyzerGPT.py
 ```
 
 ##### **2. 特定のユーザーにログファイルの読み取り権限を付与する**
